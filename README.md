@@ -128,6 +128,8 @@ heart disease risk prediction.
 ---
 
 ## 📁 Project Structure
+
+```
 betabytez-aiml-task1-ummeHabiba/
 ├── notebooks/
 │   └── heart_disease_classifier.ipynb
@@ -138,6 +140,7 @@ betabytez-aiml-task1-ummeHabiba/
 ├── app/
 │   └── app.py
 └── README.md
+```
 ---
 
 ## ✍️ Author
