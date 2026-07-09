@@ -142,8 +142,17 @@ betabytez-aiml-task1-ummeHabiba/
 └── README.md
 ```
 ---
-URL :https://heart-disease-classifiers.streamlit.app/
+URL :https://heart-disease-classifiers.streamlit.ap
 
 ## ✍️ Author
 
 **Umme Habiba Malik**
+
+**Note:** _The model's feature contributions reflect patterns learned from this 
+specific 303-patient dataset, scaled relative to the training data's mean 
+and spread — not universal medical thresholds. A value like cholesterol=180 
+mg/dl, while medically considered healthy, may still show as increasing 
+predicted risk if it happens to correlate with the positive class in this 
+particular sample. This highlights a common limitation of small medical 
+datasets: learned patterns may not always align with established clinical 
+guidelines._
