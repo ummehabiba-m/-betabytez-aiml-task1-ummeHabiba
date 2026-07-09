@@ -2,67 +2,145 @@ import streamlit as st
 import pandas as pd
 import joblib
 
-st.set_page_config(page_title="Heart Disease Predictor", page_icon="❤️", layout="wide")
+st.set_page_config(page_title="Heart Disease Predictor", page_icon="🫀", layout="wide")
 
-# --- Custom CSS ---
+# --- Custom CSS: strong, explicit contrast ---
 st.markdown("""
     <style>
+    #MainMenu {visibility: hidden;}
+    footer {visibility: hidden;}
+
     .stApp {
-        background: linear-gradient(180deg, #0f1419 0%, #1a1f2e 100%);
+        background: radial-gradient(circle at 20% 0%, #1c2333 0%, #0a0d14 55%);
     }
-    h1, h2, h3 {
-        color: #ffffff;
+
+    .block-container {
+        padding-top: 2rem;
+        max-width: 1100px;
+    }
+
+    /* Hero section */
+    .hero-wrap {
+        text-align: center;
+        padding: 40px 20px 30px 20px;
+    }
+    .hero-badge {
+        display: inline-block;
+        background: rgba(231, 76, 60, 0.15);
+        color: #ff6b5b !important;
+        padding: 6px 18px;
+        border-radius: 20px;
+        font-size: 13px;
+        font-weight: 700;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+        margin-bottom: 18px;
+        border: 1px solid rgba(231, 76, 60, 0.4);
+    }
+    .hero-title {
+        font-size: 46px !important;
+        font-weight: 800 !important;
+        color: #f5f6fa !important;
+        margin: 0 0 14px 0 !important;
         font-family: 'Segoe UI', sans-serif;
     }
-    .hero {
-        text-align: center;
-        padding: 30px 10px 10px 10px;
+    .hero-subtitle {
+        color: #aab2c0 !important;
+        font-size: 18px !important;
+        max-width: 620px;
+        margin: 0 auto !important;
+        line-height: 1.6 !important;
     }
-    .hero h1 {
-        font-size: 42px;
-        margin-bottom: 5px;
+
+    /* Card sections */
+    .card {
+        background: #141a29;
+        padding: 32px 36px;
+        border-radius: 16px;
+        border: 1px solid #262f45;
+        margin-bottom: 24px;
+        box-shadow: 0 8px 24px rgba(0,0,0,0.35);
     }
-    .hero p {
-        color: #9ca3af;
-        font-size: 17px;
-        max-width: 600px;
-        margin: 0 auto;
+    .card-title {
+        color: #ffffff !important;
+        font-size: 24px !important;
+        font-weight: 700 !important;
+        margin-bottom: 4px !important;
     }
-    .section-card {
-        background-color: #1a1f2e;
-        padding: 25px 30px;
-        border-radius: 12px;
-        border: 1px solid #2d3444;
-        margin-bottom: 20px;
+    .card-subtitle {
+        color: #8b93a7 !important;
+        font-size: 14px !important;
+        margin-bottom: 24px !important;
     }
-    label, .stSelectbox label, .stNumberInput label {
-        color: #d1d5db !important;
+
+    /* Force readable text/labels everywhere inside our app */
+    section.main label, section.main .stMarkdown p, section.main span {
+        color: #d7dbe4 !important;
+    }
+    section.main label p {
         font-weight: 600 !important;
         font-size: 14px !important;
+        color: #d7dbe4 !important;
     }
+
+    /* Inputs */
+    div[data-baseweb="input"] input,
+    div[data-baseweb="select"] div {
+        color: #f5f6fa !important;
+    }
+    div[data-testid="stNumberInput"] input {
+        background-color: #1c2436 !important;
+        color: #f5f6fa !important;
+        border: 1px solid #333e58 !important;
+        border-radius: 8px !important;
+    }
+    div[data-baseweb="select"] > div {
+        background-color: #1c2436 !important;
+        border: 1px solid #333e58 !important;
+        border-radius: 8px !important;
+    }
+
+    /* Button */
     .stButton button {
-        background-color: #e74c3c;
-        color: white;
-        font-weight: 700;
-        font-size: 16px;
-        border-radius: 8px;
-        padding: 12px 40px;
-        border: none;
+        background: linear-gradient(135deg, #ff5a4e, #e63946);
+        color: white !important;
+        font-weight: 700 !important;
+        font-size: 16px !important;
+        border-radius: 10px !important;
+        padding: 14px 40px !important;
+        border: none !important;
         width: 100%;
+        box-shadow: 0 4px 14px rgba(230, 57, 70, 0.4);
     }
     .stButton button:hover {
-        background-color: #c0392b;
+        background: linear-gradient(135deg, #e63946, #c0392b);
     }
+
+    /* Result banners */
+    div[data-testid="stAlert"] {
+        border-radius: 10px !important;
+        font-size: 16px !important;
+    }
+
+    /* Risk factor pills */
     .risk-factor {
-        background-color: #262d3d;
-        padding: 12px 18px;
-        border-radius: 8px;
-        margin-bottom: 8px;
-        border-left: 4px solid #e74c3c;
-        color: #e5e7eb;
+        background-color: #241a24;
+        padding: 14px 20px;
+        border-radius: 10px;
+        margin-bottom: 10px;
+        border-left: 4px solid #e63946;
+        color: #f0e6e6 !important;
+        font-size: 15px;
     }
     .protective-factor {
+        background-color: #16241d;
         border-left: 4px solid #2ecc71;
+        color: #e6f0ea !important;
+    }
+    .disclaimer {
+        color: #7d8598 !important;
+        font-size: 13px !important;
+        margin-top: 18px !important;
     }
     </style>
 """, unsafe_allow_html=True)
@@ -72,22 +150,21 @@ model = joblib.load('model/heart_disease_model.pkl')
 scaler = joblib.load('model/scaler.pkl')
 model_columns = joblib.load('model/model_columns.pkl')
 
-# --- Welcome / Hero section ---
+# --- Hero section ---
 st.markdown("""
-    <div class="hero">
-        <h1>❤️ Welcome to Heart Disease Predictor</h1>
-        <p>Enter a patient's clinical details below to get an instant, AI-powered risk 
-        assessment — along with a plain-language explanation of the key factors behind it.</p>
+    <div class="hero-wrap">
+        <span class="hero-badge">AI-Powered Risk Assessment</span>
+        <h1 class="hero-title">❤️ Heart Disease Predictor</h1>
+        <p class="hero-subtitle">Enter a patient's details below to get an instant risk 
+        assessment, along with a reason behind the result.</p>
     </div>
 """, unsafe_allow_html=True)
 
-st.markdown("<br>", unsafe_allow_html=True)
-
-# --- Input form, laid out in columns to avoid heavy scrolling ---
+# --- Input form ---
 with st.form("prediction_form"):
-    st.markdown('<div class="section-card">', unsafe_allow_html=True)
-    st.subheader("Patient Details")
-    st.caption("You can type directly into any field, or use the +/- controls.")
+    st.markdown('<div class="card">', unsafe_allow_html=True)
+    st.markdown('<p class="card-title">Patient Details</p>', unsafe_allow_html=True)
+    st.markdown('<p class="card-subtitle">Type directly into any field, or use the +/- controls.</p>', unsafe_allow_html=True)
 
     col1, col2, col3 = st.columns(3)
 
@@ -113,7 +190,7 @@ with st.form("prediction_form"):
     st.markdown('</div>', unsafe_allow_html=True)
     submitted = st.form_submit_button("Get Prediction")
 
-# --- Prediction + explanation logic ---
+# --- Prediction + explanation ---
 if submitted:
     input_dict = {
         'age': age, 'sex': sex, 'cp': cp, 'trestbps': trestbps, 'chol': chol,
@@ -136,27 +213,22 @@ if submitted:
     prediction = model.predict(input_encoded)[0]
     probability = model.predict_proba(input_encoded)[0][1]
 
-    st.markdown("<br>", unsafe_allow_html=True)
-    st.markdown('<div class="section-card">', unsafe_allow_html=True)
-    st.subheader("Result")
+    st.markdown('<div class="card">', unsafe_allow_html=True)
+    st.markdown('<p class="card-title">Result</p>', unsafe_allow_html=True)
 
     if prediction == 1:
         st.error(f"⚠️ **High risk of heart disease** — estimated probability: {probability:.1%}")
     else:
         st.success(f"✅ **Low risk of heart disease** — estimated probability: {probability:.1%}")
 
-    # --- Rule-based explanation of contributing factors ---
-    st.markdown("#### Why this result?")
-    st.caption("Based on the clinical factors most associated with heart disease in this dataset.")
+    st.markdown('<p class="card-title" style="font-size:19px !important; margin-top:20px;">Why this result?</p>', unsafe_allow_html=True)
+    st.markdown('<p class="card-subtitle">Based on the clinical factors most associated with heart disease in this dataset.</p>', unsafe_allow_html=True)
 
     factors = []
-
     if cp in [1, 2]:
         factors.append(("risk", "Chest pain type reported is a type commonly associated with higher heart disease likelihood in this dataset."))
     if thalach > 150:
         factors.append(("risk", f"Max heart rate achieved ({thalach} bpm) is on the higher end, a pattern linked to positive cases in this dataset."))
-    if exang == 1:
-        factors.append(("protective", "No exercise-induced angina would typically lower risk — but this patient reported experiencing it, which raises concern."))
     if oldpeak > 2:
         factors.append(("risk", f"ST depression (oldpeak = {oldpeak}) is notably elevated, often associated with reduced blood flow during exercise."))
     if age > 55:
@@ -165,13 +237,17 @@ if submitted:
         factors.append(("risk", f"Cholesterol level ({chol} mg/dl) is above the commonly recommended threshold (240 mg/dl)."))
     if ca > 0:
         factors.append(("risk", f"{ca} major vessel(s) showed coloring on fluoroscopy, which is associated with increased risk."))
+    if exang == 1:
+        factors.append(("risk", "Exercise-induced angina was reported, which raises concern."))
 
     if exang == 0:
         factors.append(("protective", "No exercise-induced angina was reported, which is generally a protective sign."))
     if oldpeak <= 1:
-        factors.append(("protective", "ST depression is low, suggesting normal blood flow response during exercise."))
+        factors.append(("protective", "ST depression is low, suggesting a normal blood flow response during exercise."))
     if chol <= 200:
         factors.append(("protective", f"Cholesterol level ({chol} mg/dl) is within a healthy range."))
+    if age <= 45:
+        factors.append(("protective", f"Age ({age}) is in a lower-risk bracket for cardiovascular conditions."))
 
     if not factors:
         st.info("No single factor stands out strongly — the result reflects a combination of moderate values across all inputs.")
@@ -181,6 +257,9 @@ if submitted:
             icon = "🔺" if kind == "risk" else "🟢"
             st.markdown(f'<div class="{css_class}">{icon} {text}</div>', unsafe_allow_html=True)
 
-    st.caption("This explanation is based on general medical thresholds and patterns observed in the training "
-               "data — it is not a substitute for professional medical diagnosis.")
+    st.markdown(
+        '<p class="disclaimer">This explanation is based on general medical thresholds and patterns '
+        'observed in the training data — it is not a substitute for professional medical diagnosis.</p>',
+        unsafe_allow_html=True
+    )
     st.markdown('</div>', unsafe_allow_html=True)
