@@ -4,7 +4,7 @@ import joblib
 
 st.set_page_config(page_title="Heart Disease Predictor", page_icon="🫀", layout="wide")
 
-# --- Custom CSS: animated gradient background + white high-contrast cards ---
+# --- Custom CSS ---
 st.markdown("""
     <style>
     #MainMenu {visibility: hidden;}
@@ -15,22 +15,30 @@ st.markdown("""
         50%  { background-position: 100% 50%; }
         100% { background-position: 0% 50%; }
     }
-
-    .stApp {
-        background: linear-gradient(-45deg, #4b6cb7, #6a3fb5, #8e44ad, #3a7bd5);
-        background-size: 400% 400%;
-        animation: gradientMove 18s ease infinite;
+    @keyframes heartbeat {
+        0%   { transform: scale(1); }
+        14%  { transform: scale(1.2); }
+        28%  { transform: scale(1); }
+        42%  { transform: scale(1.2); }
+        70%  { transform: scale(1); }
+        100% { transform: scale(1); }
     }
 
-    /* Floating texture blobs */
+    /* Lighter, softer animated gradient */
+    .stApp {
+        background: linear-gradient(-45deg, #dfe9ff, #e8dcff, #cfe0ff, #f3e8ff);
+        background-size: 400% 400%;
+        animation: gradientMove 20s ease infinite;
+    }
+
     .stApp::before {
         content: "";
         position: fixed;
         top: -10%;
         left: -10%;
-        width: 50%;
-        height: 50%;
-        background: radial-gradient(circle, rgba(255,255,255,0.12) 0%, rgba(255,255,255,0) 70%);
+        width: 45%;
+        height: 45%;
+        background: radial-gradient(circle, rgba(106,63,181,0.10) 0%, rgba(106,63,181,0) 70%);
         border-radius: 50%;
         z-index: 0;
         pointer-events: none;
@@ -40,9 +48,9 @@ st.markdown("""
         position: fixed;
         bottom: -15%;
         right: -10%;
-        width: 55%;
-        height: 55%;
-        background: radial-gradient(circle, rgba(255,255,255,0.10) 0%, rgba(255,255,255,0) 70%);
+        width: 50%;
+        height: 50%;
+        background: radial-gradient(circle, rgba(58,123,213,0.12) 0%, rgba(58,123,213,0) 70%);
         border-radius: 50%;
         z-index: 0;
         pointer-events: none;
@@ -58,46 +66,45 @@ st.markdown("""
     /* Hero */
     .hero-wrap {
         text-align: center;
-        padding: 30px 20px 20px 20px;
+        padding: 20px 20px 10px 20px;
     }
-    .hero-badge {
+    .heart-icon {
         display: inline-block;
-        background: rgba(255,255,255,0.18);
-        backdrop-filter: blur(6px);
-        color: #ffffff !important;
-        padding: 7px 20px;
-        border-radius: 20px;
-        font-size: 13px;
-        font-weight: 700;
-        letter-spacing: 1px;
-        text-transform: uppercase;
-        margin-bottom: 18px;
-        border: 1px solid rgba(255,255,255,0.35);
+        font-size: 44px;
+        animation: heartbeat 1.6s ease-in-out infinite;
     }
     .hero-title {
-        font-size: 48px !important;
+        font-size: 46px !important;
         font-weight: 800 !important;
-        color: #ffffff !important;
-        margin: 0 0 14px 0 !important;
+        color: #2b2350 !important;
+        margin: 10px 0 14px 0 !important;
         font-family: 'Segoe UI', sans-serif;
-        text-shadow: 0 2px 12px rgba(0,0,0,0.25);
     }
     .hero-subtitle {
-        color: #f0edff !important;
-        font-size: 18px !important;
-        max-width: 640px;
+        color: #4a4468 !important;
+        font-size: 17px !important;
+        max-width: 620px;
         margin: 0 auto !important;
         line-height: 1.6 !important;
     }
 
-    /* White glass cards for real contrast */
+    /* Make the actual Streamlit form itself the card - avoids double boxes */
+    div[data-testid="stForm"] {
+        background: rgba(255, 255, 255, 0.92) !important;
+        padding: 32px 36px !important;
+        border-radius: 18px !important;
+        border: 1px solid rgba(255,255,255,0.7) !important;
+        box-shadow: 0 15px 35px rgba(80, 60, 150, 0.15) !important;
+        margin-bottom: 24px;
+    }
+
     .card {
-        background: rgba(255, 255, 255, 0.97);
+        background: rgba(255, 255, 255, 0.92);
         padding: 32px 36px;
         border-radius: 18px;
-        border: 1px solid rgba(255,255,255,0.6);
+        border: 1px solid rgba(255,255,255,0.7);
         margin-bottom: 24px;
-        box-shadow: 0 15px 35px rgba(0,0,0,0.25);
+        box-shadow: 0 15px 35px rgba(80, 60, 150, 0.15);
     }
     .card-title {
         color: #2b2350 !important;
@@ -108,17 +115,15 @@ st.markdown("""
     .card-subtitle {
         color: #6b6480 !important;
         font-size: 14px !important;
-        margin-bottom: 24px !important;
+        margin-bottom: 20px !important;
     }
 
-    /* Labels: dark text on white card */
     section.main label p {
         font-weight: 600 !important;
         font-size: 14px !important;
         color: #3a3560 !important;
     }
 
-    /* Inputs */
     div[data-testid="stNumberInput"] input {
         background-color: #f4f2ff !important;
         color: #221c40 !important;
@@ -136,7 +141,6 @@ st.markdown("""
         font-weight: 600 !important;
     }
 
-    /* Button */
     .stButton button {
         background: linear-gradient(135deg, #6a3fb5, #3a7bd5);
         color: white !important;
@@ -146,7 +150,7 @@ st.markdown("""
         padding: 14px 40px !important;
         border: none !important;
         width: 100%;
-        box-shadow: 0 6px 18px rgba(106, 63, 181, 0.45);
+        box-shadow: 0 6px 18px rgba(106, 63, 181, 0.35);
         transition: transform 0.15s ease;
     }
     .stButton button:hover {
@@ -154,24 +158,34 @@ st.markdown("""
         background: linear-gradient(135deg, #5a2fa5, #2a6bc5);
     }
 
-    /* Risk factor pills */
+    /* Explicit high-contrast alert styling */
+    div[data-testid="stAlertContentError"], div[data-testid="stAlertContentError"] * {
+        color: #7a1a1a !important;
+    }
+    div[data-testid="stAlertContentSuccess"], div[data-testid="stAlertContentSuccess"] * {
+        color: #145c32 !important;
+    }
+    div[data-testid="stNotification"] {
+        border-radius: 10px !important;
+    }
+
     .risk-factor {
-        background-color: #fdeeee;
+        background-color: #fdeaea;
         padding: 14px 20px;
         border-radius: 10px;
         margin-bottom: 10px;
-        border-left: 4px solid #e63946;
-        color: #5c1a1a !important;
+        border-left: 5px solid #d63031;
+        color: #7a1a1a !important;
         font-size: 15px;
-        font-weight: 500;
+        font-weight: 600;
     }
     .protective-factor {
-        background-color: #eafaf0;
-        border-left: 4px solid #2ecc71;
+        background-color: #e7f9ee;
+        border-left: 5px solid #27ae60;
         color: #145c32 !important;
     }
     .disclaimer {
-        color: #8b849f !important;
+        color: #6b6480 !important;
         font-size: 13px !important;
         margin-top: 18px !important;
     }
@@ -186,16 +200,15 @@ model_columns = joblib.load('model/model_columns.pkl')
 # --- Hero section ---
 st.markdown("""
     <div class="hero-wrap">
-        <span class="hero-badge">AI-Powered Risk Assessment</span>
-        <h1 class="hero-title">❤️ Heart Disease Predictor</h1>
+        <span class="heart-icon">🫀</span>
+        <h1 class="hero-title">Heart Disease Predictor</h1>
         <p class="hero-subtitle">Enter a patient's clinical details below to get an instant risk 
         assessment, along with a plain-language explanation of the key factors behind the result.</p>
     </div>
 """, unsafe_allow_html=True)
 
-# --- Input form ---
+# --- Input form (the form container itself is styled as the card now) ---
 with st.form("prediction_form"):
-    st.markdown('<div class="card">', unsafe_allow_html=True)
     st.markdown('<p class="card-title">Patient Details</p>', unsafe_allow_html=True)
     st.markdown('<p class="card-subtitle">Type directly into any field, or use the +/- controls.</p>', unsafe_allow_html=True)
 
@@ -220,7 +233,6 @@ with st.form("prediction_form"):
         fbs = st.selectbox("Fasting Blood Sugar > 120 mg/dl", options=[("No", 0), ("Yes", 1)], format_func=lambda x: x[0])[1]
         restecg = st.selectbox("Resting ECG Results", options=[0, 1, 2])
 
-    st.markdown('</div>', unsafe_allow_html=True)
     submitted = st.form_submit_button("Get Prediction")
 
 # --- Prediction + explanation ---
