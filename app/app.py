@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 import joblib
 
-st.set_page_config(page_title="Heart Disease Predictor", page_icon="🫀", layout="wide")
+st.set_page_config(page_title="Heart Disease Predictor", page_icon="❤️", layout="wide")
 
 # --- Custom CSS ---
 st.markdown("""
@@ -24,7 +24,6 @@ st.markdown("""
         100% { transform: scale(1); }
     }
 
-    /* Lighter, softer animated gradient */
     .stApp {
         background: linear-gradient(-45deg, #dfe9ff, #e8dcff, #cfe0ff, #f3e8ff);
         background-size: 400% 400%;
@@ -63,7 +62,6 @@ st.markdown("""
         z-index: 1;
     }
 
-    /* Hero */
     .hero-wrap {
         text-align: center;
         padding: 20px 20px 10px 20px;
@@ -88,7 +86,6 @@ st.markdown("""
         line-height: 1.6 !important;
     }
 
-    /* Make the actual Streamlit form itself the card - avoids double boxes */
     div[data-testid="stForm"] {
         background: rgba(255, 255, 255, 0.92) !important;
         padding: 32px 36px !important;
@@ -158,7 +155,6 @@ st.markdown("""
         background: linear-gradient(135deg, #5a2fa5, #2a6bc5);
     }
 
-    /* Explicit high-contrast alert styling */
     div[data-testid="stAlertContentError"], div[data-testid="stAlertContentError"] * {
         color: #7a1a1a !important;
     }
@@ -197,17 +193,43 @@ model = joblib.load('model/heart_disease_model.pkl')
 scaler = joblib.load('model/scaler.pkl')
 model_columns = joblib.load('model/model_columns.pkl')
 
+# --- Human-readable labels for encoded columns ---
+FEATURE_LABELS = {
+    'age': 'Age',
+    'trestbps': 'Resting blood pressure',
+    'chol': 'Cholesterol level',
+    'thalach': 'Max heart rate achieved',
+    'oldpeak': 'ST depression (oldpeak)',
+    'sex_1': 'Being male',
+    'cp_1': 'Chest pain type 1',
+    'cp_2': 'Chest pain type 2',
+    'cp_3': 'Chest pain type 3',
+    'fbs_1': 'Fasting blood sugar > 120 mg/dl',
+    'restecg_1': 'Resting ECG result 1',
+    'restecg_2': 'Resting ECG result 2',
+    'exang_1': 'Exercise-induced angina',
+    'slope_1': 'ST slope type 1',
+    'slope_2': 'ST slope type 2',
+    'ca_1': '1 major vessel colored',
+    'ca_2': '2 major vessels colored',
+    'ca_3': '3 major vessels colored',
+    'ca_4': '4 major vessels colored',
+    'thal_1': 'Thalassemia type 1',
+    'thal_2': 'Thalassemia type 2',
+    'thal_3': 'Thalassemia type 3',
+}
+
 # --- Hero section ---
 st.markdown("""
     <div class="hero-wrap">
-        <span class="heart-icon">🫀</span>
+        <span class="heart-icon">🫀🫀</span>
         <h1 class="hero-title">Heart Disease Predictor</h1>
         <p class="hero-subtitle">Enter a patient's clinical details below to get an instant risk 
-        assessment, along with a plain-language explanation of the key factors behind the result.</p>
+        assessment, along with an explanation based on the model's own learned weights.</p>
     </div>
 """, unsafe_allow_html=True)
 
-# --- Input form (the form container itself is styled as the card now) ---
+# --- Input form ---
 with st.form("prediction_form"):
     st.markdown('<p class="card-title">Patient Details</p>', unsafe_allow_html=True)
     st.markdown('<p class="card-subtitle">Type directly into any field, or use the +/- controls.</p>', unsafe_allow_html=True)
@@ -235,7 +257,7 @@ with st.form("prediction_form"):
 
     submitted = st.form_submit_button("Get Prediction")
 
-# --- Prediction + explanation ---
+# --- Prediction + explanation based on real model coefficients ---
 if submitted:
     input_dict = {
         'age': age, 'sex': sex, 'cp': cp, 'trestbps': trestbps, 'chol': chol,
@@ -253,10 +275,21 @@ if submitted:
     input_encoded = input_encoded[model_columns]
 
     numerical_cols = ['age', 'trestbps', 'chol', 'thalach', 'oldpeak']
-    input_encoded[numerical_cols] = scaler.transform(input_encoded[numerical_cols])
+    input_scaled = input_encoded.copy()
+    input_scaled[numerical_cols] = scaler.transform(input_scaled[numerical_cols])
 
-    prediction = model.predict(input_encoded)[0]
-    probability = model.predict_proba(input_encoded)[0][1]
+    prediction = model.predict(input_scaled)[0]
+    probability = model.predict_proba(input_scaled)[0][1]
+
+    # --- Compute each feature's real contribution: coefficient * scaled value ---
+    coefficients = model.coef_[0]
+    contributions = {}
+    for i, col in enumerate(model_columns):
+        value = input_scaled.iloc[0][col]
+        contributions[col] = coefficients[i] * value
+
+    # Sort by absolute impact, take the top 5 most influential for this specific patient
+    sorted_contributions = sorted(contributions.items(), key=lambda x: abs(x[1]), reverse=True)[:5]
 
     st.markdown('<div class="card">', unsafe_allow_html=True)
     st.markdown('<p class="card-title">Result</p>', unsafe_allow_html=True)
@@ -267,44 +300,19 @@ if submitted:
         st.success(f"✅ **Low risk of heart disease** — estimated probability: {probability:.1%}")
 
     st.markdown('<p class="card-title" style="font-size:19px !important; margin-top:20px;">Why this result?</p>', unsafe_allow_html=True)
-    st.markdown('<p class="card-subtitle">Based on the clinical factors most associated with heart disease in this dataset.</p>', unsafe_allow_html=True)
+    st.markdown('<p class="card-subtitle">These are the factors that most influenced THIS prediction, based on the model\'s own learned weights (not general medical rules).</p>', unsafe_allow_html=True)
 
-    factors = []
-    if cp in [1, 2]:
-        factors.append(("risk", "Chest pain type reported is a type commonly associated with higher heart disease likelihood in this dataset."))
-    if thalach > 150:
-        factors.append(("risk", f"Max heart rate achieved ({thalach} bpm) is on the higher end, a pattern linked to positive cases in this dataset."))
-    if oldpeak > 2:
-        factors.append(("risk", f"ST depression (oldpeak = {oldpeak}) is notably elevated, often associated with reduced blood flow during exercise."))
-    if age > 55:
-        factors.append(("risk", f"Age ({age}) is in a higher-risk bracket for cardiovascular conditions."))
-    if chol > 240:
-        factors.append(("risk", f"Cholesterol level ({chol} mg/dl) is above the commonly recommended threshold (240 mg/dl)."))
-    if ca > 0:
-        factors.append(("risk", f"{ca} major vessel(s) showed coloring on fluoroscopy, which is associated with increased risk."))
-    if exang == 1:
-        factors.append(("risk", "Exercise-induced angina was reported, which raises concern."))
-
-    if exang == 0:
-        factors.append(("protective", "No exercise-induced angina was reported, which is generally a protective sign."))
-    if oldpeak <= 1:
-        factors.append(("protective", "ST depression is low, suggesting a normal blood flow response during exercise."))
-    if chol <= 200:
-        factors.append(("protective", f"Cholesterol level ({chol} mg/dl) is within a healthy range."))
-    if age <= 45:
-        factors.append(("protective", f"Age ({age}) is in a lower-risk bracket for cardiovascular conditions."))
-
-    if not factors:
-        st.info("No single factor stands out strongly — the result reflects a combination of moderate values across all inputs.")
-    else:
-        for kind, text in factors:
-            css_class = "risk-factor" if kind == "risk" else "risk-factor protective-factor"
-            icon = "🔺" if kind == "risk" else "🟢"
-            st.markdown(f'<div class="{css_class}">{icon} {text}</div>', unsafe_allow_html=True)
+    for col, impact in sorted_contributions:
+        label = FEATURE_LABELS.get(col, col)
+        if impact > 0:
+            st.markdown(f'<div class="risk-factor">🔺 {label} — increased the predicted risk</div>', unsafe_allow_html=True)
+        else:
+            st.markdown(f'<div class="risk-factor protective-factor">🟢 {label} — decreased the predicted risk</div>', unsafe_allow_html=True)
 
     st.markdown(
-        '<p class="disclaimer">This explanation is based on general medical thresholds and patterns '
-        'observed in the training data — it is not a substitute for professional medical diagnosis.</p>',
+        '<p class="disclaimer">This explanation reflects the exact coefficients learned by the Logistic '
+        'Regression model during training, applied to this patient\'s specific values — it is not a '
+        'substitute for professional medical diagnosis.</p>',
         unsafe_allow_html=True
     )
     st.markdown('</div>', unsafe_allow_html=True)
