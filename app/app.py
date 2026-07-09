@@ -4,105 +4,141 @@ import joblib
 
 st.set_page_config(page_title="Heart Disease Predictor", page_icon="🫀", layout="wide")
 
-# --- Custom CSS: strong, explicit contrast ---
+# --- Custom CSS: animated gradient background + white high-contrast cards ---
 st.markdown("""
     <style>
     #MainMenu {visibility: hidden;}
     footer {visibility: hidden;}
 
+    @keyframes gradientMove {
+        0%   { background-position: 0% 50%; }
+        50%  { background-position: 100% 50%; }
+        100% { background-position: 0% 50%; }
+    }
+
     .stApp {
-        background: radial-gradient(circle at 20% 0%, #1c2333 0%, #0a0d14 55%);
+        background: linear-gradient(-45deg, #4b6cb7, #6a3fb5, #8e44ad, #3a7bd5);
+        background-size: 400% 400%;
+        animation: gradientMove 18s ease infinite;
+    }
+
+    /* Floating texture blobs */
+    .stApp::before {
+        content: "";
+        position: fixed;
+        top: -10%;
+        left: -10%;
+        width: 50%;
+        height: 50%;
+        background: radial-gradient(circle, rgba(255,255,255,0.12) 0%, rgba(255,255,255,0) 70%);
+        border-radius: 50%;
+        z-index: 0;
+        pointer-events: none;
+    }
+    .stApp::after {
+        content: "";
+        position: fixed;
+        bottom: -15%;
+        right: -10%;
+        width: 55%;
+        height: 55%;
+        background: radial-gradient(circle, rgba(255,255,255,0.10) 0%, rgba(255,255,255,0) 70%);
+        border-radius: 50%;
+        z-index: 0;
+        pointer-events: none;
     }
 
     .block-container {
         padding-top: 2rem;
         max-width: 1100px;
+        position: relative;
+        z-index: 1;
     }
 
-    /* Hero section */
+    /* Hero */
     .hero-wrap {
         text-align: center;
-        padding: 40px 20px 30px 20px;
+        padding: 30px 20px 20px 20px;
     }
     .hero-badge {
         display: inline-block;
-        background: rgba(231, 76, 60, 0.15);
-        color: #ff6b5b !important;
-        padding: 6px 18px;
+        background: rgba(255,255,255,0.18);
+        backdrop-filter: blur(6px);
+        color: #ffffff !important;
+        padding: 7px 20px;
         border-radius: 20px;
         font-size: 13px;
         font-weight: 700;
         letter-spacing: 1px;
         text-transform: uppercase;
         margin-bottom: 18px;
-        border: 1px solid rgba(231, 76, 60, 0.4);
+        border: 1px solid rgba(255,255,255,0.35);
     }
     .hero-title {
-        font-size: 46px !important;
+        font-size: 48px !important;
         font-weight: 800 !important;
-        color: #f5f6fa !important;
+        color: #ffffff !important;
         margin: 0 0 14px 0 !important;
         font-family: 'Segoe UI', sans-serif;
+        text-shadow: 0 2px 12px rgba(0,0,0,0.25);
     }
     .hero-subtitle {
-        color: #aab2c0 !important;
+        color: #f0edff !important;
         font-size: 18px !important;
-        max-width: 620px;
+        max-width: 640px;
         margin: 0 auto !important;
         line-height: 1.6 !important;
     }
 
-    /* Card sections */
+    /* White glass cards for real contrast */
     .card {
-        background: #141a29;
+        background: rgba(255, 255, 255, 0.97);
         padding: 32px 36px;
-        border-radius: 16px;
-        border: 1px solid #262f45;
+        border-radius: 18px;
+        border: 1px solid rgba(255,255,255,0.6);
         margin-bottom: 24px;
-        box-shadow: 0 8px 24px rgba(0,0,0,0.35);
+        box-shadow: 0 15px 35px rgba(0,0,0,0.25);
     }
     .card-title {
-        color: #ffffff !important;
+        color: #2b2350 !important;
         font-size: 24px !important;
-        font-weight: 700 !important;
+        font-weight: 800 !important;
         margin-bottom: 4px !important;
     }
     .card-subtitle {
-        color: #8b93a7 !important;
+        color: #6b6480 !important;
         font-size: 14px !important;
         margin-bottom: 24px !important;
     }
 
-    /* Force readable text/labels everywhere inside our app */
-    section.main label, section.main .stMarkdown p, section.main span {
-        color: #d7dbe4 !important;
-    }
+    /* Labels: dark text on white card */
     section.main label p {
         font-weight: 600 !important;
         font-size: 14px !important;
-        color: #d7dbe4 !important;
+        color: #3a3560 !important;
     }
 
     /* Inputs */
-    div[data-baseweb="input"] input,
-    div[data-baseweb="select"] div {
-        color: #f5f6fa !important;
-    }
     div[data-testid="stNumberInput"] input {
-        background-color: #1c2436 !important;
-        color: #f5f6fa !important;
-        border: 1px solid #333e58 !important;
+        background-color: #f4f2ff !important;
+        color: #221c40 !important;
+        border: 1.5px solid #c9c2f5 !important;
         border-radius: 8px !important;
+        font-weight: 600 !important;
     }
     div[data-baseweb="select"] > div {
-        background-color: #1c2436 !important;
-        border: 1px solid #333e58 !important;
+        background-color: #f4f2ff !important;
+        border: 1.5px solid #c9c2f5 !important;
         border-radius: 8px !important;
+    }
+    div[data-baseweb="select"] span {
+        color: #221c40 !important;
+        font-weight: 600 !important;
     }
 
     /* Button */
     .stButton button {
-        background: linear-gradient(135deg, #ff5a4e, #e63946);
+        background: linear-gradient(135deg, #6a3fb5, #3a7bd5);
         color: white !important;
         font-weight: 700 !important;
         font-size: 16px !important;
@@ -110,35 +146,32 @@ st.markdown("""
         padding: 14px 40px !important;
         border: none !important;
         width: 100%;
-        box-shadow: 0 4px 14px rgba(230, 57, 70, 0.4);
+        box-shadow: 0 6px 18px rgba(106, 63, 181, 0.45);
+        transition: transform 0.15s ease;
     }
     .stButton button:hover {
-        background: linear-gradient(135deg, #e63946, #c0392b);
-    }
-
-    /* Result banners */
-    div[data-testid="stAlert"] {
-        border-radius: 10px !important;
-        font-size: 16px !important;
+        transform: translateY(-2px);
+        background: linear-gradient(135deg, #5a2fa5, #2a6bc5);
     }
 
     /* Risk factor pills */
     .risk-factor {
-        background-color: #241a24;
+        background-color: #fdeeee;
         padding: 14px 20px;
         border-radius: 10px;
         margin-bottom: 10px;
         border-left: 4px solid #e63946;
-        color: #f0e6e6 !important;
+        color: #5c1a1a !important;
         font-size: 15px;
+        font-weight: 500;
     }
     .protective-factor {
-        background-color: #16241d;
+        background-color: #eafaf0;
         border-left: 4px solid #2ecc71;
-        color: #e6f0ea !important;
+        color: #145c32 !important;
     }
     .disclaimer {
-        color: #7d8598 !important;
+        color: #8b849f !important;
         font-size: 13px !important;
         margin-top: 18px !important;
     }
@@ -155,8 +188,8 @@ st.markdown("""
     <div class="hero-wrap">
         <span class="hero-badge">AI-Powered Risk Assessment</span>
         <h1 class="hero-title">❤️ Heart Disease Predictor</h1>
-        <p class="hero-subtitle">Enter a patient's details below to get an instant risk 
-        assessment, along with a reason behind the result.</p>
+        <p class="hero-subtitle">Enter a patient's clinical details below to get an instant risk 
+        assessment, along with a plain-language explanation of the key factors behind the result.</p>
     </div>
 """, unsafe_allow_html=True)
 
